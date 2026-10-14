@@ -26,6 +26,7 @@ class Stand:
         self.__superficie = superficie
         self.__padiglione = padiglione
         self.__prezzo = prezzo
+        self.__espositore = None
 
     @property
     def codice_stand(self):
@@ -39,6 +40,16 @@ class Stand:
     @property
     def prezzo(self):
         return self.__prezzo
+    @property
+    def espositore(self):
+        return self.__espositore
+    @espositore.setter
+    def espositore(self, espositore):
+        self.__espositore = espositore
+
+    @property
+    def disponibile(self):
+        return self.__espositore is None
 
     def __str__(self):
         return f"{self.__codice_stand}, {self.__superficie}, {self.__padiglione}, {self.__prezzo}"
@@ -76,7 +87,6 @@ class LingottoFiere:
         self.__nome = nome
         self.espositori = {}
         self.stand = {}
-        self.occupati = {}
 
     """Aggiungere setter e getter se necessari"""
     @property
@@ -106,7 +116,7 @@ class LingottoFiere:
                         codice_stand = line[0]
                         superficie = line[1]
                         padiglione = line[2]
-                        prezzo = line[3]
+                        prezzo = float(line[3])
                         stand = Stand(codice_stand, superficie, padiglione, prezzo)
                         self.stand[codice_stand] = stand
 
@@ -114,7 +124,7 @@ class LingottoFiere:
                         codice_stand = line[0]
                         superficie = line[1]
                         padiglione = line[2]
-                        prezzo = line[3]
+                        prezzo = float(line[3])
                         valore = line[4]
                         if valore.isdigit():
                             prese_elettriche = int(valore)
@@ -125,7 +135,7 @@ class LingottoFiere:
                             premium = Premium(codice_stand, superficie, padiglione, prezzo,posizione)
                             self.stand[codice_stand] = premium
         except FileNotFoundError:
-            raise Exception(f"File {file_path} non trovato")
+            raise FileNotFoundError(f"File {file_path} non trovato")
 
 
     def assegna_stand_a_espositore(self, codice_stand, codice_espositore):
@@ -136,17 +146,15 @@ class LingottoFiere:
         if codice_espositore not in self.espositori:
             raise Exception(f"espositori {codice_espositore} non trovato")
 
-        if codice_stand in self.occupati:
-            raise Exception (f"Stand {codice_stand} già occupato")
+        if not self.stand[codice_stand].disponibile:
+            raise Exception(f"stand {codice_stand} già occupato")
 
-        for esp in self.occupati.values():
-            if esp.codice_espositore == codice_espositore:
-                raise Exception (f"Espositore {codice_espositore} già assegnato a uno stand")
+        espositore = self.espositori[codice_espositore]
+        for s in self.stand[codice_stand].values():
+            if s.espositore == espositore:
+                raise Exception(f"espositore {codice_espositore} già asseganto a uno stand")
 
-        if codice_stand not in self.occupati:
-            assegnazione = Espositori(codice_espositore, None, None)
-            self.occupati[codice_stand] = assegnazione
-        return self.occupati
+            self.stand[codice_stand].espositore = espositore
 
 
     def elenca_espositori(self):
