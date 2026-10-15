@@ -73,7 +73,7 @@ class Stand:
         return self.nuovo_prezzo() < other.nuovo_prezzo()
 
     def __str__(self):
-        return f"{self.__codice_stand}: Standard | {self.__superficie} mq - Padiglione {self.__padiglione} - Prezzo {self.prezzo:.2f}€ - {self.stato}"
+        return f"{self.__codice_stand}: Standard | {self.__superficie} mq - Padiglione {self.__padiglione} - Prezzo {self.prezzo}€ - {self.stato}"
 
 
 class Premium(Stand):
@@ -89,7 +89,7 @@ class Premium(Stand):
         return self.prezzo * 1.30
 
     def __str__(self):
-        return f"{self.codice_stand}: Premium | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.nuovo_prezzo:.2f}€ - Posizione: {self.__posizione} - {self.stato}"
+        return f"{self.codice_stand}: Premium | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.nuovo_prezzo()}€ - Posizione: {self.__posizione} - {self.stato}"
 
 
 class Prese(Stand):
@@ -105,7 +105,7 @@ class Prese(Stand):
         return self.prezzo * (1 + 0.07 * self.__prese)
 
     def __str__(self):
-        return f"{self.codice_stand}: Prese Extra | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.nuovo_prezzo:.2f}€ - Prese aggiuntive: {self.__prese} - {self.stato}"
+        return f"{self.codice_stand}: Prese Extra | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.nuovo_prezzo()}€ - Prese aggiuntive: {self.__prese} - {self.stato}"
 
 
 class LingottoFiere:
@@ -172,7 +172,7 @@ class LingottoFiere:
             raise Exception(f"Stand {codice_stand} non trovato")
 
         if codice_espositore not in self.espositori:
-            raise Exception(f"Espositori {codice_espositore} non trovato")
+            raise Exception(f"Espositore {codice_espositore} non trovato")
 
         if not self.stand[codice_stand].disponibile:
             raise Exception(f"Stand {codice_stand} già occupato")
@@ -181,7 +181,7 @@ class LingottoFiere:
         for s in self.stand.values():
 
             if s.espositore == espositore:
-                raise Exception(f"Espositore {codice_espositore} già asseganto a uno stand")
+                raise Exception(f"Espositore {codice_espositore} già assegnato a uno stand")
 
         self.stand[codice_stand].espositore = espositore
 
@@ -197,10 +197,10 @@ class LingottoFiere:
                     break
 
             if codice_stand is None:
-                print(f"Nessuno stand asseganto all'espositore {espositore}")
+                print(f"Nessuno stand assegnato all'espositore {espositore}")
 
             else:
-                print(f"Stand {codice_stand} asseganto all'espositore {espositore}")
+                print(f"Stand {codice_stand} assegnato all'espositore {espositore}")
 
 
     def stand_ordinati_per_prezzo(self):
