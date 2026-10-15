@@ -16,6 +16,11 @@ class Espositori:
     def cognome(self):
         return self.__cognome
 
+    def __eq__(self, other):
+        if isinstance(other, Espositori):
+            return self.codice_espositore == other.codice_espositore
+        return False
+
     def __str__(self):
         return f"{self.__codice_espositore},{self.__nome} {self.__cognome}"
 
@@ -40,6 +45,10 @@ class Stand:
     @property
     def prezzo(self):
         return self.__prezzo
+    @prezzo.setter
+    def prezzo(self, prezzo):
+        self.__prezzo = prezzo
+
     @property
     def espositore(self):
         return self.__espositore
@@ -51,8 +60,17 @@ class Stand:
     def disponibile(self):
         return self.__espositore is None
 
+    @property
+    def stato(self):
+        if self.disponibile:
+            return "Disponibile"
+        return "Non disponibile"
+
+    def __lt__(self, other):
+        return self.__prezzo < other.nuovo_prezzo
+
     def __str__(self):
-        return f"{self.__codice_stand}, {self.__superficie}, {self.__padiglione}, {self.__prezzo}"
+        return f"{self.__codice_stand}: Standard | {self.__superficie} mq - Padiglione {self.__padiglione} - Prezzo {self.prezzo:.2f}€ - {self.stato}"
 
 
 class Premium(Stand):
@@ -64,8 +82,11 @@ class Premium(Stand):
     def posizione(self):
         return self.__posizione
 
+    def nuovo_prezzo(self):
+        return self.prezzo * 1.30
+
     def __str__(self):
-        return f"{super().__str__()}, {self.__posizione}"
+        return f"{self.codice_stand}: Premium | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.prezzo:.2f}€ - Posizione: {self.__posizione} - {self.stato}"
 
 
 class Prese(Stand):
@@ -77,8 +98,11 @@ class Prese(Stand):
     def prese(self):
         return self.__prese
 
+    def nuovo_prezzo(self):
+        return self.prezzo * (1 + 0.07 * self.__prese)
+
     def __str__(self):
-        return f"{super().__str__()}, {self.__prese}"
+        return f"{self.codice_stand}: Prese Extra | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.prezzo:.2f}€ - Prese aggiuntive: {self.__prese} - {self.stato}"
 
 
 class LingottoFiere:
@@ -100,42 +124,43 @@ class LingottoFiere:
 
     def carica_file_dati(self, file_path):
         """Carica i dati (stand ed espositori) dal file"""
-        try:
-            with open(file_path,  "r", encoding = "utf-8") as infile:
-                reader = csv.reader(infile)
 
-                for line in reader:
-                    if line[0].startswith("E"):
-                        codice_espositore = line[0]
-                        nome = line[1]
-                        cognome = line[2]
-                        espositore = Espositori(codice_espositore,nome,cognome)
-                        self.espositori[codice_espositore] = espositore
+        with open(file_path,  "r", encoding = "utf-8") as infile:
+            reader = csv.reader(infile)
 
-                    if line[0].startswith("S") and len(line) < 5:
-                        codice_stand = line[0]
-                        superficie = line[1]
-                        padiglione = line[2]
-                        prezzo = float(line[3])
-                        stand = Stand(codice_stand, superficie, padiglione, prezzo)
-                        self.stand[codice_stand] = stand
+            for line in reader:
+                if line[0].startswith("E"):
+                    codice_espositore = line[0]
+                    nome = line[1]
+                    cognome = line[2]
+                    espositore = Espositori(codice_espositore,nome,cognome)
+                    self.espositori[codice_espositore] = espositore
 
-                    if len(line) == 5:
-                        codice_stand = line[0]
-                        superficie = line[1]
-                        padiglione = line[2]
-                        prezzo = float(line[3])
-                        valore = line[4]
-                        if valore.isdigit():
-                            prese_elettriche = int(valore)
-                            prese = Prese(codice_stand, superficie, padiglione, prezzo, prese_elettriche)
-                            self.stand[codice_stand] = prese
-                        else:
-                            posizione = valore
-                            premium = Premium(codice_stand, superficie, padiglione, prezzo,posizione)
-                            self.stand[codice_stand] = premium
-        except FileNotFoundError:
-            raise FileNotFoundError(f"File {file_path} non trovato")
+                if line[0].startswith("S") and len(line) < 5:
+                    codice_stand = line[0]
+                    superficie = line[1]
+                    padiglione = line[2]
+                    prezzo = float(line[3])
+                    stand = Stand(codice_stand, superficie, padiglione, prezzo)
+                    self.stand[codice_stand] = stand
+
+                if len(line) == 5:
+                    codice_stand = line[0]
+                    superficie = line[1]
+                    padiglione = line[2]
+                    prezzo = float(line[3])
+                    valore = line[4]
+                    if valore.isdigit():
+                        prese_elettriche = int(valore)
+                        prese = Prese(codice_stand, superficie, padiglione, prezzo, prese_elettriche)
+                        prese.nuovo_prezzo()
+                        self.stand[codice_stand] = prese
+                    else:
+                        posizione = valore
+                        premium = Premium(codice_stand, superficie, padiglione, prezzo,posizione)
+                        premium.nuovo_prezzo()
+                        self.stand[codice_stand] = premium
+
 
 
     def assegna_stand_a_espositore(self, codice_stand, codice_espositore):
@@ -159,9 +184,19 @@ class LingottoFiere:
 
     def elenca_espositori(self):
         """Stampa l'elenco degli espositori mostrando, per ognuno, lo stand a cui è associato, quando applicabile """
+        for espositore in self.espositori.values():
+            codice_stand = None
+            for s in self.stand.values():
+                if s.espositore == espositore:
+                    codice_stand = s.codice_stand
+                    break
+            if codice_stand is None:
+                print(f"Nessuno stand asseganto all'espositore {espositore}")
+            else:
+                print(f"Stand {codice_stand} asseganto all'espositore {espositore}")
 
-        # TODO
 
     def stand_ordinati_per_prezzo(self):
         """Restituisce la lista ordinata degli stand in base al prezzo"""
-        # TODO
+        return self.sorted(self.stand.values())
+
