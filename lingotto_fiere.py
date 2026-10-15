@@ -66,8 +66,11 @@ class Stand:
             return "Disponibile"
         return "Non disponibile"
 
+    def nuovo_prezzo(self):
+        return self.prezzo
+
     def __lt__(self, other):
-        return self.__prezzo < other.nuovo_prezzo
+        return self.nuovo_prezzo() < other.nuovo_prezzo()
 
     def __str__(self):
         return f"{self.__codice_stand}: Standard | {self.__superficie} mq - Padiglione {self.__padiglione} - Prezzo {self.prezzo:.2f}€ - {self.stato}"
@@ -86,7 +89,7 @@ class Premium(Stand):
         return self.prezzo * 1.30
 
     def __str__(self):
-        return f"{self.codice_stand}: Premium | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.prezzo:.2f}€ - Posizione: {self.__posizione} - {self.stato}"
+        return f"{self.codice_stand}: Premium | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.nuovo_prezzo:.2f}€ - Posizione: {self.__posizione} - {self.stato}"
 
 
 class Prese(Stand):
@@ -102,7 +105,7 @@ class Prese(Stand):
         return self.prezzo * (1 + 0.07 * self.__prese)
 
     def __str__(self):
-        return f"{self.codice_stand}: Prese Extra | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.prezzo:.2f}€ - Prese aggiuntive: {self.__prese} - {self.stato}"
+        return f"{self.codice_stand}: Prese Extra | {self.superficie} mq - Padiglione {self.padiglione} - Prezzo {self.nuovo_prezzo:.2f}€ - Prese aggiuntive: {self.__prese} - {self.stato}"
 
 
 class LingottoFiere:
@@ -150,15 +153,15 @@ class LingottoFiere:
                     padiglione = line[2]
                     prezzo = float(line[3])
                     valore = line[4]
+
                     if valore.isdigit():
                         prese_elettriche = int(valore)
                         prese = Prese(codice_stand, superficie, padiglione, prezzo, prese_elettriche)
-                        prese.nuovo_prezzo()
                         self.stand[codice_stand] = prese
+
                     else:
                         posizione = valore
                         premium = Premium(codice_stand, superficie, padiglione, prezzo,posizione)
-                        premium.nuovo_prezzo()
                         self.stand[codice_stand] = premium
 
 
@@ -169,34 +172,37 @@ class LingottoFiere:
             raise Exception(f"Stand {codice_stand} non trovato")
 
         if codice_espositore not in self.espositori:
-            raise Exception(f"espositori {codice_espositore} non trovato")
+            raise Exception(f"Espositori {codice_espositore} non trovato")
 
         if not self.stand[codice_stand].disponibile:
-            raise Exception(f"stand {codice_stand} già occupato")
+            raise Exception(f"Stand {codice_stand} già occupato")
 
         espositore = self.espositori[codice_espositore]
-        for s in self.stand[codice_stand].values():
-            if s.espositore == espositore:
-                raise Exception(f"espositore {codice_espositore} già asseganto a uno stand")
+        for s in self.stand.values():
 
-            self.stand[codice_stand].espositore = espositore
+            if s.espositore == espositore:
+                raise Exception(f"Espositore {codice_espositore} già asseganto a uno stand")
+
+        self.stand[codice_stand].espositore = espositore
 
 
     def elenca_espositori(self):
         """Stampa l'elenco degli espositori mostrando, per ognuno, lo stand a cui è associato, quando applicabile """
         for espositore in self.espositori.values():
             codice_stand = None
+
             for s in self.stand.values():
                 if s.espositore == espositore:
                     codice_stand = s.codice_stand
                     break
+
             if codice_stand is None:
                 print(f"Nessuno stand asseganto all'espositore {espositore}")
+
             else:
                 print(f"Stand {codice_stand} asseganto all'espositore {espositore}")
 
 
     def stand_ordinati_per_prezzo(self):
         """Restituisce la lista ordinata degli stand in base al prezzo"""
-        return self.sorted(self.stand.values())
-
+        return sorted(self.stand.values())
